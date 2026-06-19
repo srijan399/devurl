@@ -1,11 +1,11 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"urlshort/internal/db"
@@ -13,18 +13,20 @@ import (
 	"urlshort/utils"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
 )
 
 func ShortenURL(res http.ResponseWriter, req *http.Request) {
 	body, err := io.ReadAll(req.Body)
-
 	if err != nil {
-		log.Fatal("Error reading request body.")
+		http.Error(res, "error reading request body", http.StatusBadRequest)
+		return
 	}
 
 	var originalURL types.URL
-	err = json.Unmarshal(body, &originalURL)
+	if err := json.Unmarshal(body, &originalURL); err != nil {
+		http.Error(res, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
 
 	if !utils.Valid(originalURL.Url) {
 		http.Error(res, "URL is not valid", http.StatusBadRequest)
@@ -54,13 +56,21 @@ func ShortenURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
 	gateway := os.Getenv("GATEWAY_URL")
-	targetURL := fmt.Sprintf(
-		"%v%v", gateway, shortCode,
-	)
+	targetURL := fmt.Sprintf("%v%v", gateway, shortCode)
 
-	fmt.Fprintf(res, "Short URL: %s", targetURL)
+	response := types.ShortenResponse{
+		ShortURL:    targetURL,
+		OriginalURL: originalURL.Url,
+	}
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		http.Error(res, "failed to encode response", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	res.Write(buf.Bytes())
 }

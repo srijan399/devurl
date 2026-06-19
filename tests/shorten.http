@@ -2,5 +2,5 @@ POST http://localhost:8090/shorten
 Content-Type: application/json
 
 {
-    "url": "https://pinterest.com"
+    "url": "https://reddit.com"
 }

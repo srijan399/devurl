@@ -2,12 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"urlshort/controllers"
 	"urlshort/internal/db"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Connect postgres
 	db.ConnectMain()
 
 	// Homepage

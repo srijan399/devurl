@@ -4,15 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-
-	"github.com/joho/godotenv"
 )
 
 func ConnectMain() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
 	conn, err := Connect()
 	if err != nil {
 		log.Fatal(err)
