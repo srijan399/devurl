@@ -26,6 +26,11 @@ func ShortenURL(res http.ResponseWriter, req *http.Request) {
 	var originalURL types.URL
 	err = json.Unmarshal(body, &originalURL)
 
+	if !utils.Valid(originalURL.Url) {
+		http.Error(res, "URL is not valid", http.StatusBadRequest)
+		return
+	}
+
 	var shortCode string
 	err = db.DB.QueryRow(
 		context.Background(),
